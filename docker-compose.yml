@@ -1,0 +1,26 @@
+services:
+  php85:
+    build:
+      context: .
+      args:
+        PHP_VERSION: "8.5"
+    tty: true
+    stdin_open: true
+    volumes:
+      - .:/app
+      - composer-cache:/root/.composer/cache
+  php84:
+    extends:
+      service: php85
+    build:
+      args:
+        PHP_VERSION: "8.4"
+  php83:
+    extends:
+      service: php85
+    build:
+      args:
+        PHP_VERSION: "8.3"
+
+volumes:
+  composer-cache:

@@ -1,0 +1,49 @@
+{
+  "name": "dave-liddament/architecture-rules-attributes",
+  "description": "Attributes for declaring the architectural role each class plays",
+  "keywords": [
+    "architecture",
+    "attributes",
+    "static analysis"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dave Liddament",
+      "email": "dave@lampbristol.com"
+    }
+  ],
+  "require": {
+    "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-strict-rules": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "DaveLiddament\\Architecture\\Attribute\\": "src/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "scripts": {
+    "ci": [
+      "@composer-validate",
+      "@cs",
+      "@phpstan"
+    ],
+    "ci-local": [
+      "@composer-validate",
+      "@cs-fix",
+      "@phpstan"
+    ],
+    "composer-validate": "@composer validate --no-check-all --strict",
+    "cs": "php-cs-fixer fix -v --dry-run",
+    "cs-fix": "php-cs-fixer fix -v",
+    "phpstan": "phpstan analyse --no-progress"
+  }
+}
