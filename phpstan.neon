@@ -18,3 +18,10 @@ services:
             readmePath: %currentWorkingDirectory%/README.md
         tags:
             - phpstan.rules.rule
+    -
+        class: Utils\Phpstan\Rules\AttributeDefinitionRule
+        arguments:
+            namespace: 'DaveLiddament\Architecture\Attribute'
+            readmePath: %currentWorkingDirectory%/README.md
+        tags:
+            - phpstan.rules.rule

@@ -18,8 +18,12 @@ Adding, renaming or removing an attribute is a breaking change for that package 
 ## Attribute conventions
 
 Every attribute is `final`, targets classes only, has a docblock explaining what it means, only has `readonly`
-promoted properties, and is documented in the README. A custom PHPStan rule in [`utils/phpstan`](utils/phpstan) checks this as part of
-`composer ci`.
+promoted properties, and is documented in the README. A custom PHPStan rule in [`utils/phpstan`](utils/phpstan)
+checks this as part of `composer ci`.
+
+Each attribute's definition is in the README, between `<!-- definition: Name -->` and `<!-- /definition -->`
+markers, and its docblock repeats it word for word (links become plain text). A second rule checks they match, so
+when you change a definition, change both.
 
 ## Docker setup
 
