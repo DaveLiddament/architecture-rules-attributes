@@ -326,6 +326,9 @@ To know where one domain ends and the next begins, the checks need a layout. By 
 Dependencies flow one way: domains → Shared → Lib. Pending is treated like any other domain: other domains may use
 its classes only if they are exported.
 
+Domains may use each other, but not in a circle: if Stats uses Walks, Walks may not use Stats, directly or through
+other domains. Domains in a cycle can't be understood, changed or extracted on their own.
+
 Within a domain, some roles have their own directory: `Controller\`, `CliCommand\` and `Entity\`. Repositories go in
 `Repository\` or the domain's root. Everything else can go wherever suits the domain.
 
