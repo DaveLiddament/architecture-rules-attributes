@@ -6,27 +6,50 @@
 
 ## The problem
 
-Every codebase has roles: services, repositories, value objects, controllers. But a class's role usually lives
-somewhere you can't check: its name (`InvoiceService`), its directory (`Repository/`), or someone's head.
+A codebase's architecture rules usually live in names, directories, a wiki page or someone's head. Nothing checks
+them, so they erode one shortcut at a time. This package lets the code state two kinds of rule, so a tool can check
+them, whether the code is written by a person or by an AI agent:
 
-So nothing stops a "service" quietly picking up state, or a "value object" growing a setter. And a newcomer can't
-tell what a class is meant to be without asking.
+1. **Every class says what type of class it is, and each type has rules.** A class is a value object, a repository,
+   a service, and so on. Each of these roles has defined behaviour: value objects are immutable, services are
+   stateless, repositories only load and store entities. Once a class declares its role, a "value object" growing a
+   setter is an error, not something to spot in review. See [The roles](#the-roles).
 
-This package lets each class say what it is:
+   ```php
+   use DaveLiddament\Architecture\Attribute\ValueObject;
 
-```php
-use DaveLiddament\Architecture\Attribute\Service;
+   #[ValueObject]
+   final readonly class Money
+   {
+   }
+   ```
 
-#[Service]
-final readonly class InvoiceSender
-{
-}
-```
+2. **Code is kept together in domains, and each class says whether other domains may use it.** A domain's internals
+   stay private to it. The classes other domains may use, such as an entity or a service, are marked `#[Exported]`.
+   See [Exporting to other domains](#exporting-to-other-domains).
 
-Once a class declares its role, the rules for that role can be checked: for example, a `#[Service]` that isn't
-`final readonly`, or a `#[ValueObject]` holding a mutable date. See [Checking the rules](#checking-the-rules).
+   ```php
+   use DaveLiddament\Architecture\Attribute\Entity;
+   use DaveLiddament\Architecture\Attribute\Exported;
 
-This package is just the attributes. It has no dependencies and works with any framework, or none.
+   #[Entity]
+   #[Exported]
+   final class Walk
+   {
+   }
+   ```
+
+This package is just the attributes. A static analysis tool checks the rules: see
+[Checking the rules](#checking-the-rules). The attributes have no dependencies and work with any framework, or none.
+
+## Why it helps
+
+Checked rules constrain and guide the code that gets written. A coding agent that gives a value object a setter is
+told straight away, and fixes it before anyone looks. The same goes for a person.
+
+They also show reviewers where their time is best spent. A value object that passes all its checks has little left
+to get wrong, so it rarely needs a close look. The interesting decisions are in the services, so that's where review
+effort goes. This matters more as agents write more of the code, and there's more to review than there is time for.
 
 ## Installation
 
@@ -212,6 +235,81 @@ shouldn't, or it's framework glue that the checks can be told to exempt.
 
 Roles are for classes. Enums, interfaces and traits don't need one.
 
+## Exporting to other domains
+
+Most applications are split into domains, such as `Walks`, `Billing` and `Stats`. A domain should keep its internals
+private, so that other domains can't couple themselves to details that should be free to change. But some classes are
+meant to be used by other domains: an entity, a value object, a service.
+
+`#[Exported]` marks those classes. A class in a domain can only be used by other domains if it is `#[Exported]`,
+wherever it lives in that domain. It isn't a role, so it goes alongside one:
+
+```php
+use DaveLiddament\Architecture\Attribute\Entity;
+use DaveLiddament\Architecture\Attribute\Exported;
+use DaveLiddament\Architecture\Attribute\Service;
+
+#[Entity]
+#[Exported]                             // any domain may use it
+final class Walk {}
+
+#[Service]
+#[Exported(to: ['Stats', 'Billing'])]   // only Stats and Billing may use it
+final readonly class WalkPlanner {}
+```
+
+### How the app is organised by default
+
+To know where one domain ends and the next begins, the checks need a layout. By default,
+[phpstan-architecture-rules](#phpstan) expects this:
+
+| Area | Default namespace | What lives there |
+|---|---|---|
+| **Domain** | `App\<Name>\`, e.g. `App\Walks\` | Every namespace directly under `App\` that isn't one of the areas below |
+| **Shared** | `App\Shared\` | Application code used throughout the app, e.g. a `User` entity |
+| **Pending** | `App\Pending\` | New code whose domain isn't clear yet. It moves into a domain once its home is obvious |
+| **Lib** | `Lib\` | Code you could take to another project |
+
+Dependencies flow one way: domains → Shared → Lib. Nothing may depend on Pending.
+
+Within a domain, some roles have their own directory: `Controller\`, `CliCommand\` and `Entity\`. Repositories go in
+`Repository\` or the domain's root. Everything else can go wherever suits the domain.
+
+A domain is named after its namespace under `App\`: `Walks` for `App\Walks`. That's the name `to` uses.
+
+These are only defaults. The app namespace and the namespaces of Shared, Pending and Lib can be changed for each
+project, and any rule can be turned off. See the
+[phpstan-architecture-rules configuration](https://github.com/DaveLiddament/phpstan-architecture-rules#configuration).
+
+### What it means
+
+- **No `#[Exported]`**: the class is internal to its domain. Only its own domain may use it.
+- **`#[Exported]`**: every domain may use the class.
+- **`#[Exported(to: [...])]`**: only the domains listed may use it. Each one must be an existing domain, so a typo, or
+  a domain that has since been renamed, is reported.
+- **An exported [`#[Repository]`](#repository) is read-only to other domains.** They may call its `find*`, `get*`,
+  `has*` and `is*` methods. Writes go through a service the owning domain exports, so the owning domain stays in
+  charge of its data.
+
+Which classes other domains may use is decided by the attribute, not by where the class lives. Making a class
+available to another domain doesn't mean moving it and updating every import, and an entity can be exported even
+though it must live in `Entity\`.
+
+### What to export
+
+| Can be exported | Should never be exported |
+|---|---|
+| `#[Service]`, `#[QueueGateway]`, `#[ValueObject]`, `#[Dto]`, `#[Entity]`, `#[Repository]`, interfaces, enums, exceptions | `#[CliCommand]`, `#[Controller]`, `#[QueueProcessor]`, `#[ViewModel]`, `#[Serializer]`, `#[ConfigProvider]`, traits, framework glue (form definitions, event listeners, ...) |
+
+Entry points are invoked by the framework, so nothing should depend on them. View models, serializers and config
+providers are details of one domain. Exporting one of these is reported.
+
+### Exported or Shared?
+
+Export a class when it belongs to one domain and a few others need it. If it's used throughout the app, or doesn't
+really belong to any one domain, move it to Shared instead. A `to` list that keeps growing is a sign the class belongs
+in Shared.
+
 ## Why not DDD?
 
 The roles borrow DDD's names where they mean the same thing (entity, value object, repository), but this isn't a full
@@ -228,8 +326,8 @@ it to build something that fits exactly how you want to work. A full DDD version
 
 ## Stability
 
-The namespace `DaveLiddament\Architecture\Attribute` won't change. Adding a role is not a breaking change. Renaming or
-removing one is, and only happens in a new major version.
+The namespace `DaveLiddament\Architecture\Attribute` won't change. Adding an attribute is not a breaking change.
+Renaming or removing one is, and only happens in a new major version.
 
 ## Contributing
 
