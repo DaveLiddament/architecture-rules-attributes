@@ -2,6 +2,19 @@ parameters:
     level: max
     paths:
         - src
+        - utils/phpstan/src
+        - utils/phpstan/tests
+    excludePaths:
+        - utils/phpstan/tests/Rules/*/Fixtures/*
 
 includes:
     - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+services:
+    -
+        class: Utils\Phpstan\Rules\AttributeConventionsRule
+        arguments:
+            namespace: 'DaveLiddament\Architecture\Attribute'
+            readmePath: %currentWorkingDirectory%/README.md
+        tags:
+            - phpstan.rules.rule

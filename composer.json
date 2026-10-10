@@ -18,13 +18,21 @@
     "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
   },
   "require-dev": {
+    "dave-liddament/phpstan-rule-test-helper": "^0.6.0",
     "friendsofphp/php-cs-fixer": "^3.95",
     "phpstan/phpstan": "^2.1",
-    "phpstan/phpstan-strict-rules": "^2.0"
+    "phpstan/phpstan-strict-rules": "^2.0",
+    "phpunit/phpunit": "^12.5"
   },
   "autoload": {
     "psr-4": {
       "DaveLiddament\\Architecture\\Attribute\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Utils\\Phpstan\\": "utils/phpstan/src/",
+      "Utils\\Phpstan\\Tests\\": "utils/phpstan/tests/"
     }
   },
   "config": {
@@ -34,16 +42,19 @@
     "ci": [
       "@composer-validate",
       "@cs",
-      "@phpstan"
+      "@phpstan",
+      "@test"
     ],
     "ci-local": [
       "@composer-validate",
       "@cs-fix",
-      "@phpstan"
+      "@phpstan",
+      "@test"
     ],
     "composer-validate": "@composer validate --no-check-all --strict",
     "cs": "php-cs-fixer fix -v --dry-run",
     "cs-fix": "php-cs-fixer fix -v",
-    "phpstan": "phpstan analyse --no-progress"
+    "phpstan": "phpstan analyse --no-progress",
+    "test": "phpunit"
   }
 }

@@ -15,6 +15,12 @@ classes only: no behaviour, no rules. The rules that check the attributes live i
 
 Adding, renaming or removing an attribute is a breaking change for that package too, so open an issue first.
 
+## Attribute conventions
+
+Every attribute is `final`, targets classes only, has a docblock explaining what it means, only has `readonly`
+promoted properties, and is documented in the README. A custom PHPStan rule in [`utils/phpstan`](utils/phpstan) checks this as part of
+`composer ci`.
+
 ## Docker setup
 
 All development is done through Docker. There is one service per supported PHP version:

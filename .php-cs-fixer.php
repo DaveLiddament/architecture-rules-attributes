@@ -2,6 +2,9 @@
 
 $finder = PhpCsFixer\Finder::create()
     ->in(__DIR__ . '/src')
+    ->in(__DIR__ . '/utils/phpstan/src')
+    ->in(__DIR__ . '/utils/phpstan/tests')
+    ->notPath('#(^|/)Fixtures/#')
 ;
 
 $config = new PhpCsFixer\Config();
