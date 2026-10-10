@@ -320,10 +320,11 @@ To know where one domain ends and the next begins, the checks need a layout. By 
 |---|---|---|
 | **Domain** | `App\<Name>\`, e.g. `App\Walks\` | Every namespace directly under `App\` that isn't one of the areas below |
 | **Shared** | `App\Shared\` | Application code used throughout the app, e.g. a `User` entity |
-| **Pending** | `App\Pending\` | New code whose domain isn't clear yet. It moves into a domain once its home is obvious |
+| **Pending** | `App\Pending\` | New code whose domain isn't clear yet. It acts as a domain called `Pending` until it moves to its real home |
 | **Lib** | `Lib\` | Code you could take to another project |
 
-Dependencies flow one way: domains → Shared → Lib. Nothing may depend on Pending.
+Dependencies flow one way: domains → Shared → Lib. Pending is treated like any other domain: other domains may use
+its classes only if they are exported.
 
 Within a domain, some roles have their own directory: `Controller\`, `CliCommand\` and `Entity\`. Repositories go in
 `Repository\` or the domain's root. Everything else can go wherever suits the domain.
