@@ -123,10 +123,16 @@ the exact rules, and how to configure or turn them off, see [Checking the rules]
 
 ### CliCommand
 
+<!-- definition: CliCommand -->
+
 A command line entry point. It reads input, hands the work to services and entities, and reports the result. Keep
 business logic out of it, so the same work can also be triggered from a controller or a queue.
 
+<!-- /definition -->
+
 ### ConfigProvider
+
+<!-- definition: ConfigProvider -->
 
 The one place primitive configuration lives: API keys, URLs, limits, feature flags. Its properties are scalars, or
 lists of scalars.
@@ -134,19 +140,31 @@ lists of scalars.
 Services don't take strings and integers in their constructors. They take a config provider. That keeps every
 setting in one place you can find, and stops primitives leaking through the app.
 
+<!-- /definition -->
+
 ### Controller
+
+<!-- definition: Controller -->
 
 An HTTP entry point. Like a CLI command, it translates a request into calls to services and entities, and turns the
 result into a response. Its public methods return one of the allowed response types.
 
+<!-- /definition -->
+
 ### Dto
+
+<!-- definition: Dto -->
 
 A plain data carrier between layers, e.g. the validated contents of a form or an API request.
 
 It is deliberately not a value object. A DTO may carry things a value never would, such as entities, and it can be
 filled in step by step.
 
+<!-- /definition -->
+
 ### Entity
+
+<!-- definition: Entity -->
 
 An object with identity. Two entities are the same if their identity matches, even when their content differs: a
 customer who changes their name is still the same customer. Entities are loaded and stored through a
@@ -155,20 +173,32 @@ customer who changes their name is still the same customer. Entities are loaded 
 An entity isn't just data. Behaviour that belongs to it lives on it: `$order->cancel()`, rather than an
 `OrderCanceller` service that changes the order's status.
 
+<!-- /definition -->
+
 If your persistence library has its own entity attribute, the checks can be configured to treat that as
 `#[Entity]` too, so you don't need both.
 
 ### QueueGateway
 
+<!-- definition: QueueGateway -->
+
 Sends messages to a queue. It has no rules of its own. It marks a collaborator that a [`#[Service]`](#service) may
 depend on, so that sending a message doesn't need a service to hold the queue client directly.
 
+<!-- /definition -->
+
 ### QueueProcessor
+
+<!-- definition: QueueProcessor -->
 
 Handles messages taken from a queue. The queue's equivalent of a controller: it unpacks the message and hands the
 work to services.
 
+<!-- /definition -->
+
 ### Repository
+
+<!-- definition: Repository -->
 
 Loads and stores entities, and hides how they are stored. That could be a database, files, an API, or data generated
 at build time. The rest of the app never needs to know.
@@ -176,6 +206,8 @@ at build time. The rest of the app never needs to know.
 When one entity owns others, such as an order and its lines, the repository loads and stores the owner, and the owned
 entities come with it. There's no separate repository for order lines. In DDD terms, a repository works with aggregate
 roots.
+
+<!-- /definition -->
 
 Public methods use a small, fixed vocabulary, so a caller can tell what a method does from its name:
 
@@ -188,10 +220,16 @@ Public methods use a small, fixed vocabulary, so a caller can tell what a method
 
 ### Serializer
 
+<!-- definition: Serializer -->
+
 Converts to and from wire formats such as JSON, CSV or an API's payloads. It's the one place array shapes
 (`array{...}`) belong: everywhere else, structured data travels as a value object, DTO or view model.
 
+<!-- /definition -->
+
 ### Service
+
+<!-- definition: Service -->
 
 A stateless collaborator. It does the work that doesn't belong to a single entity or value object: running a use
 case, coordinating several objects, or talking to the outside world.
@@ -201,7 +239,11 @@ interface. No primitives and no state, so a service gives the same answer howeve
 
 In DDD terms, this covers domain, application and infrastructure services.
 
+<!-- /definition -->
+
 ### ValueObject
+
+<!-- definition: ValueObject -->
 
 A value with no identity: two value objects with the same content are equal. Money, an email address, a date range.
 
@@ -209,10 +251,16 @@ Every property is itself a value: a primitive, `\DateTimeImmutable`, an enum, an
 these. Value objects are immutable; to "change" one, create a new one. Behaviour lives here too:
 `$price->add($tax)`.
 
+<!-- /definition -->
+
 ### ViewModel
+
+<!-- definition: ViewModel -->
 
 A snapshot handed to a template. Like a value object, but it holds formatted, ready-to-display values rather than
 domain values, so the template has no decisions left to make.
+
+<!-- /definition -->
 
 ## Choosing a role
 
@@ -237,12 +285,17 @@ Roles are for classes. Enums, interfaces and traits don't need one.
 
 ## Exporting to other domains
 
+<!-- definition: Exported -->
+
 Most applications are split into domains, such as `Walks`, `Billing` and `Stats`. A domain should keep its internals
 private, so that other domains can't couple themselves to details that should be free to change. But some classes are
 meant to be used by other domains: an entity, a value object, a service.
 
 `#[Exported]` marks those classes. A class in a domain can only be used by other domains if it is `#[Exported]`,
-wherever it lives in that domain. It isn't a role, so it goes alongside one:
+wherever it lives in that domain. With `to`, only the domains listed may use it. It isn't a role, so it goes
+alongside one.
+
+<!-- /definition -->
 
 ```php
 use DaveLiddament\Architecture\Attribute\Entity;

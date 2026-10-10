@@ -13,6 +13,9 @@ check them live in the sibling package `phpstan-architecture-rules`, installed w
   them is fine. Describing a role in one framework's terms (e.g. "form types") is not.
 - Each attribute is `final`, targets classes only, has a docblock fully explaining what it means, and is
   documented in the README. `AttributeConventionsRule` in `utils/phpstan` checks this.
+- Each attribute's definition lives in the README, between `<!-- definition: Name -->` and `<!-- /definition -->`.
+  Its docblock has the same paragraphs, with links as plain text. `AttributeDefinitionRule` checks they match, so
+  change both together.
 - The README is the main deliverable. Keep it concise and starting with the problem the package solves. When adding
   or changing a role, update its README section.
 - The phpstan-architecture-rules README is the source of truth for what the checks do. When this README describes a
