@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Prepares a fresh Amp orb: native PHP 8.3 and Composer dependencies. Orbs have no Docker daemon, so
+# agents run php/composer directly here. 8.3 is the lowest supported version, so code that needs a newer
+# PHP fails in the orb; CI covers 8.4 and 8.5.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+PHP_VERSION=8.3
+step() { echo "==> $1"; SECONDS=0; }
+done_step() { echo "    done in ${SECONDS}s"; }
+
+step "PHP ${PHP_VERSION}"
+packages=(php${PHP_VERSION}-cli php${PHP_VERSION}-zip php${PHP_VERSION}-mbstring php${PHP_VERSION}-xml php${PHP_VERSION}-curl unzip)
+missing=()
+for p in "${packages[@]}"; do
+  dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed' || missing+=("$p")
+done
+if ((${#missing[@]})); then
+  if [ ! -f /etc/apt/sources.list.d/php.list ]; then
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl lsb-release
+    sudo curl -fsSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg
+    echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
+      | sudo tee /etc/apt/sources.list.d/php.list >/dev/null
+  fi
+  sudo apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}"
+fi
+sudo update-alternatives --quiet --set php "/usr/bin/php${PHP_VERSION}"
+# Match the Docker image's unlimited memory limit (PHPStan needs it).
+echo 'memory_limit = -1' | sudo tee "/etc/php/${PHP_VERSION}/cli/conf.d/99-memlimit.ini" >/dev/null
+done_step
+
+step "Composer"
+if ! command -v composer >/dev/null; then
+  tmp="$(mktemp -d)"
+  curl -fsSLo "$tmp/composer-setup.php" https://getcomposer.org/installer
+  php "$tmp/composer-setup.php" --quiet --install-dir="$tmp"
+  sudo install -m 0755 "$tmp/composer.phar" /usr/local/bin/composer
+  rm -rf -- "$tmp"
+fi
+done_step
+
+step "Composer dependencies"
+# composer.lock is gitignored, so resolve like CI does; this also picks up composer.json changes.
+composer update --no-interaction --no-progress
+done_step
+
+step "Orb agent guidance"
+mkdir -p "$HOME/.config/amp"
+marker="# architecture-rules-attributes orb notes"
+if ! grep -Fqx "$marker" "$HOME/.config/amp/AGENTS.md" 2>/dev/null; then
+  cat >> "$HOME/.config/amp/AGENTS.md" <<NOTES
+
+$marker
+- Orbs have no Docker daemon. Instead of \`docker compose run --rm php85 ...\`, run PHP commands directly
+  (e.g. \`composer ci\`); PHP ${PHP_VERSION} and Composer are installed natively with vendor/ ready.
+- PHP ${PHP_VERSION} is the lowest supported version, so code must not use newer PHP features. 8.4 and 8.5 are
+  not installed; GitHub Actions CI covers them.
+NOTES
+fi
+done_step
