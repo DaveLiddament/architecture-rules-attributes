@@ -281,7 +281,7 @@ Work down this list and stop at the first match:
 If a class fits two roles, it's probably doing two jobs. Split it. If it fits none, it's probably holding state it
 shouldn't, or it's framework glue that the checks can be told to exempt.
 
-Roles are for classes. Enums, interfaces and traits don't need one.
+Roles are for classes. Enums, interfaces and traits don't need one, and putting one on them is reported.
 
 ## Exporting to other domains
 
