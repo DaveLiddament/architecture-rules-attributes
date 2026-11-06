@@ -3,3 +3,4 @@
 /.php-cs-fixer.cache
 /.idea/
 /.phpunit.cache/
+/.amp/portals/*
